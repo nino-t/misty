@@ -1,0 +1,45 @@
+version: 2
+
+push_docker: &push_docker
+  docker:
+    - image: google/cloud-sdk
+  working_directory: /nodejs/src/github.com/supersoccer/misty
+  steps:
+    - checkout
+    - attach_workspace:
+        at: .
+    - run:
+        name: Authorize gcloud
+        command: |
+          ./.circleci/auth_gcloud.sh
+    - setup_remote_docker:
+        docker_layer_caching: true
+    - run:
+        name: Push docker image
+        command: |
+          ./.circleci/push_docker.sh
+
+jobs:
+  push_docker_develop:
+    <<: *push_docker
+    environment:
+      REPOSITORY_HOST: "asia.gcr.io"
+      IMAGE_NAME: "misty"
+
+  # push_docker_master:
+  #   <<: *push_docker
+  #   environment:
+  #     REPOSITORY_HOST: "asia.gcr.io"
+  #     IMAGE_NAME: "sentadv-users"
+
+workflows:
+  version: 2
+  # test-build-push_docker:
+  push_docker:
+    jobs:
+      - push_docker_develop:
+          filters:
+            branches:
+              only: 
+                - master
+                - develop
